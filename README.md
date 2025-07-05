@@ -14,10 +14,9 @@
 - Debian or Ubuntu (or compatible)
 - Required packages: curl, jq, dateutils (installed automatically)
 
-## 🚀 Installation
+## 🚀 Quick Install (recommended)
 
-1. Clone this repository:
+Run this command on your server:
 
 ```bash
-git clone https://github.com/sebastianengman/overseerr-notifier.git
-cd overseerr-notifier
+bash <(curl -s https://raw.githubusercontent.com/sebastianengman/overseerr-notifier/main/install.sh)
