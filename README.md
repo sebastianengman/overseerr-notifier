@@ -19,5 +19,5 @@
 1. Clone this repository:
 
 ```bash
-git clone https://github.com/your-user/overseerr-notifier.git
+git clone https://github.com/sebastianengman/overseerr-notifier.git
 cd overseerr-notifier
