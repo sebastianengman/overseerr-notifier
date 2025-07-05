@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Configuration - replace these with your own values
+# 🔧 Configuration – Replace with your own credentials
 OVERSEERR_URL="https://overseerr.example.com"
 OVERSEERR_API_KEY="your_overseerr_api_key"
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your_webhook"
-CHECK_INTERVAL=3600  # in seconds (3600 = 1 hour)
+CHECK_INTERVAL=3600  # 1 hour in seconds
 
 while true; do
     echo "[INFO] Checking Overseerr for pending requests..."
@@ -20,28 +20,33 @@ while true; do
 
         IDS=$(echo "$RESPONSE" | jq -r '.results[].id')
 
+        i=1
         for ID in $IDS; do
             ENTRY=$(echo "$RESPONSE" | jq -r --argjson id $ID '.results[] | select(.id == $id)')
+
             TITLE=$(echo "$ENTRY" | jq -r '.media?.title // .title // "Unknown Title"')
             USERNAME=$(echo "$ENTRY" | jq -r '.requestedBy?.displayName // "Unknown User"')
             TYPE=$(echo "$ENTRY" | jq -r '.type')
             CREATED=$(echo "$ENTRY" | jq -r '.createdAt')
+
             TIME_AGO=$(dateutils.ddiff "$CREATED" now -f '%dd %Hh' 2>/dev/null || echo "?")
 
             ICON="🎬"
-            [ "$TYPE" == "tv" ] && ICON="📺"
+            [ "$TYPE" = "tv" ] && ICON="📺"
 
-            MESSAGE+="$ICON $TITLE (requested by $USERNAME – $TIME_AGO ago)\\n"
+            MESSAGE+="$i. $ICON $TITLE (requested by $USERNAME – $TIME_AGO ago)\\n"
+            ((i++))
         done
 
-        # Send to Discord
+        echo "[INFO] Sending message to Discord..."
         curl -H "Content-Type: application/json" \
              -X POST \
              -d "{\"content\": \"$MESSAGE\"}" \
              "$DISCORD_WEBHOOK_URL"
     else
-        echo "[INFO] No pending requests."
+        echo "[INFO] No pending requests found."
     fi
 
+    echo "[INFO] Sleeping for $CHECK_INTERVAL seconds..."
     sleep "$CHECK_INTERVAL"
 done
