@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# 🔧 Configuration – Replace with your own credentials
-OVERSEERR_URL="https://overseerr.example.com"
-OVERSEERR_API_KEY="your_overseerr_api_key"
-DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your_webhook"
-CHECK_INTERVAL=3600  # 1 hour in seconds
+# Use env vars or values set by install.sh
+: "${OVERSEERR_URL:?Missing Overseerr URL}"
+: "${OVERSEERR_API_KEY:?Missing Overseerr API key}"
+: "${DISCORD_WEBHOOK_URL:?Missing Discord Webhook}"
+: "${CHECK_INTERVAL:=3600}"  # default to 3600 if not set
 
-# 🔄 Function to retrieve title if missing in .media
 get_title() {
     local type="$1"
     local tmdbId="$2"
@@ -23,7 +22,6 @@ get_title() {
     fi
 }
 
-# 🌀 Loop forever or until manually stopped
 while true; do
     echo "[INFO] Checking Overseerr for pending requests..."
 
@@ -34,7 +32,7 @@ while true; do
     PENDING_COUNT=$(echo "$RESPONSE" | jq '.results | length')
 
     if [ "$PENDING_COUNT" -gt 0 ]; then
-        MESSAGE=":warning: **$PENDING_COUNT pending requests in Overseerr!**\\n\\n"
+        MESSAGE=":warning: **$PENDING_COUNT pending requests in Overseerr!**\n\n"
 
         IDS=$(echo "$RESPONSE" | jq -r '.results[].id')
 
@@ -44,21 +42,17 @@ while true; do
             TYPE=$(echo "$ENTRY" | jq -r '.type')
             CREATED=$(echo "$ENTRY" | jq -r '.createdAt')
             USERNAME=$(echo "$ENTRY" | jq -r '.requestedBy.displayName // "Unknown User"')
-
-            # Get TMDB ID and fallback title from detailed lookup
             TMDBID=$(echo "$ENTRY" | jq -r '.media.tmdbId // empty')
             TITLE=$(get_title "$TYPE" "$TMDBID")
 
             TIME_AGO=$(dateutils.ddiff "$CREATED" now -f '%dd %Hh' 2>/dev/null || echo "?")
-
             ICON="🎬"
             [ "$TYPE" == "tv" ] && ICON="📺"
 
-            MESSAGE+="$i. $ICON $TITLE (requested by $USERNAME – $TIME_AGO ago)\\n"
+            MESSAGE+="$i. $ICON $TITLE (requested by $USERNAME – $TIME_AGO ago)\n"
             ((i++))
         done
 
-        echo "[INFO] Sending message to Discord..."
         curl -H "Content-Type: application/json" \
              -X POST \
              -d "{\"content\": \"$MESSAGE\"}" \
