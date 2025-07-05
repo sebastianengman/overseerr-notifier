@@ -6,6 +6,24 @@ OVERSEERR_API_KEY="your_overseerr_api_key"
 DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/your_webhook"
 CHECK_INTERVAL=3600  # 1 hour in seconds
 
+# 🔄 Function to retrieve title if missing in .media
+get_title() {
+    local type="$1"
+    local tmdbId="$2"
+
+    if [ "$tmdbId" == "null" ] || [ -z "$tmdbId" ]; then
+        echo "Unknown Title"
+        return
+    fi
+
+    if [ "$type" == "tv" ]; then
+        curl -s -H "X-Api-Key: $OVERSEERR_API_KEY" "$OVERSEERR_URL/api/v1/tv/$tmdbId" | jq -r '.name // "Unknown Title"'
+    else
+        curl -s -H "X-Api-Key: $OVERSEERR_API_KEY" "$OVERSEERR_URL/api/v1/movie/$tmdbId" | jq -r '.title // "Unknown Title"'
+    fi
+}
+
+# 🌀 Loop forever or until manually stopped
 while true; do
     echo "[INFO] Checking Overseerr for pending requests..."
 
@@ -23,16 +41,18 @@ while true; do
         i=1
         for ID in $IDS; do
             ENTRY=$(echo "$RESPONSE" | jq -r --argjson id $ID '.results[] | select(.id == $id)')
-
-            TITLE=$(echo "$ENTRY" | jq -r '.media?.title // .title // "Unknown Title"')
-            USERNAME=$(echo "$ENTRY" | jq -r '.requestedBy?.displayName // "Unknown User"')
             TYPE=$(echo "$ENTRY" | jq -r '.type')
             CREATED=$(echo "$ENTRY" | jq -r '.createdAt')
+            USERNAME=$(echo "$ENTRY" | jq -r '.requestedBy.displayName // "Unknown User"')
+
+            # Get TMDB ID and fallback title from detailed lookup
+            TMDBID=$(echo "$ENTRY" | jq -r '.media.tmdbId // empty')
+            TITLE=$(get_title "$TYPE" "$TMDBID")
 
             TIME_AGO=$(dateutils.ddiff "$CREATED" now -f '%dd %Hh' 2>/dev/null || echo "?")
 
             ICON="🎬"
-            [ "$TYPE" = "tv" ] && ICON="📺"
+            [ "$TYPE" == "tv" ] && ICON="📺"
 
             MESSAGE+="$i. $ICON $TITLE (requested by $USERNAME – $TIME_AGO ago)\\n"
             ((i++))
