@@ -1,28 +1,23 @@
 # Overseerr Notifier
 
-⏰ A lightweight script and systemd service that sends hourly Discord notifications if there are any pending requests in your Overseerr instance.
-
-Perfect for self-hosted users who want to stay on top of user requests without constantly checking the Overseerr web interface.
-
----
+⏰ A Bash script + systemd service that sends hourly Discord notifications for any pending requests in your Overseerr server.
 
 ## 📦 Features
 
-- ✅ Polls the Overseerr API for pending requests in regular intervals (default: every hour)
-- 📬 Sends notifications to a Discord channel via Webhook
-- 💡 Includes detailed info per request:
-  - Movie/TV show title 🎬/📺
-  - Requested by (user display name)
-  - How long ago the request was made
+- Polls the Overseerr API every hour (by default)
+- Checks for pending (unreviewed) requests
+- Sends a detailed message to a Discord webhook
+- Includes title, requesting user, and how long the request has been pending
 
----
+## 🧰 Requirements
 
-## ⚙️ Configuration
+- Debian or Ubuntu (or compatible)
+- Required packages: curl, jq, dateutils (installed automatically)
 
-Edit the notifier.sh script after cloning or before installing to set:
+## 🚀 Installation
+
+1. Clone this repository:
 
 ```bash
-OVERSEERR_URL="https://overseerr.example.com"     # your Overseerr domain or IP
-OVERSEERR_API_KEY="your_overseerr_api_key"        # Server API key from Overseerr
-DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."  # Your Discord Webhook URL
-CHECK_INTERVAL=3600                               # Polling interval in seconds (default: 1 hour)
+git clone https://github.com/your-user/overseerr-notifier.git
+cd overseerr-notifier
